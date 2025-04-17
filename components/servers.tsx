@@ -38,7 +38,6 @@ export function Servers() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-8"></TableHead>
           <TableHead className="w-[30%]">Key</TableHead>
           <TableHead className="w-[15%] text-center">Project</TableHead>
           <TableHead className="w-[10%] text-center">Name</TableHead>
@@ -50,7 +49,7 @@ export function Servers() {
       <TableBody>
         {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="bg-muted h-[100px] text-center">
+            <TableCell colSpan={6} className="bg-muted h-[100px] text-center">
               No repositories found
             </TableCell>
           </TableRow>
@@ -66,19 +65,24 @@ export function Servers() {
 function RepositoryItem({ item }: { item: RepositorySchemaType }) {
   return (
     <TableRow>
-      <TableCell className="font-medium">
+      <TableCell className="text-sm font-medium">
+        <Link href={`/servers/${item.repoKey}`} className="text-link hover:underline">
+          {item.repoKey}
+        </Link>
+      </TableCell>
+      <TableCell className="text-center text-sm">{item.project}</TableCell>
+      <TableCell className="text-center text-sm">{item.name}</TableCell>
+      <TableCell className="text-center text-sm">
         <Link
           href={getPublicRepoUrl({ registry: item.registry, owner: item.project, repo: item.name })}
           target="_blank"
           rel="noopener noreferrer"
+          className="text-link flex items-center justify-center gap-1 hover:underline"
         >
+          {item.registry}
           <ExternalLink className="h-4 w-4" />
         </Link>
       </TableCell>
-      <TableCell className="text-sm font-medium">{item.repoKey}</TableCell>
-      <TableCell className="text-center text-sm">{item.project}</TableCell>
-      <TableCell className="text-center text-sm">{item.name}</TableCell>
-      <TableCell className="text-center text-sm">{item.registry}</TableCell>
       <TableCell className="text-center text-sm">{item.baseDirectory}</TableCell>
       <TableCell className="text-center text-sm">
         <Link href={`/deployments/${item.repoKey}`} className="text-link hover:underline">

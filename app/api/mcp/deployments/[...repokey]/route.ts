@@ -6,14 +6,18 @@ import { deployments, repos } from "@/lib/db/schema"
 import { DeploymentsResponseSchemaType } from "@/lib/schema/deployment"
 import { ApiResponse } from "@/app/api/types"
 
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ repokey: string[] }> }
+) {
   try {
-    const searchParams = req.nextUrl.searchParams
-    const repoKey = searchParams.get("repo-key")
+    const repoKeyArr = (await params).repokey
 
-    if (!repoKey) {
-      return NextResponse.json(ApiResponse.error("Invalid request"), { status: 400 })
+    if (!Array.isArray(repoKeyArr)) {
+      return NextResponse.json(ApiResponse.error("Invalid repokey"), { status: 400 })
     }
+
+    const repoKey = repoKeyArr.join("/")
 
     const foundDeployments = await db
       .select()

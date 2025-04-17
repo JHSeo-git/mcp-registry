@@ -24,8 +24,7 @@ export function Deployments({ repoKey }: DeploymentsProps) {
   const { isLoading, fetchRegistGithub } = useRegistGithub()
 
   const fetchDeployments = useCallback(async () => {
-    const search = qs.stringify({ "repo-key": repoKey })
-    const response = await fetch(`/api/mcp/deployments?${search}`)
+    const response = await fetch(`/api/mcp/deployments/${repoKey}`)
 
     const result = await response.json()
 

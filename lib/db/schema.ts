@@ -1,7 +1,6 @@
 import { relations } from "drizzle-orm"
-import { index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 
-// deployment status enum 정의
 export const deploymentStatusEnum = pgEnum("deployment_status", [
   "SUCCESS",
   "FAILED",
@@ -9,7 +8,6 @@ export const deploymentStatusEnum = pgEnum("deployment_status", [
   "IN_PROGRESS",
 ])
 
-// deployments 테이블 정의
 export const deployments = pgTable(
   "deployments",
   {
@@ -26,7 +24,37 @@ export const deployments = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     updatedBy: text("updated_by"),
   },
-  (table) => [index("idx_deployments_repo_id_commit").on(table.repoId, table.commit)]
+  (table) => [index("idx_deployments_repo_id").on(table.repoId)]
+)
+
+export const servers = pgTable(
+  "servers",
+  {
+    id: uuid("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    deploymentId: uuid("deployment_id").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdBy: text("created_by").notNull(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    updatedBy: text("updated_by"),
+  },
+  (table) => [index("idx_servers_deployment_id").on(table.deploymentId)]
+)
+
+export const tools = pgTable(
+  "tools",
+  {
+    id: uuid("id").primaryKey(),
+    name: text("name").notNull(),
+    inputSchema: jsonb("input_schema").notNull(),
+    serverId: uuid("server_id").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdBy: text("created_by").notNull(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    updatedBy: text("updated_by"),
+  },
+  (table) => [index("idx_tools_server_id").on(table.serverId)]
 )
 
 export const repos = pgTable(
@@ -56,8 +84,28 @@ export const deploymentsRelations = relations(deployments, ({ one }) => ({
     fields: [deployments.repoId],
     references: [repos.id],
   }),
+  servers: one(servers, {
+    fields: [deployments.id],
+    references: [servers.deploymentId],
+  }),
+}))
+
+export const serversRelations = relations(servers, ({ one, many }) => ({
+  deployment: one(deployments, {
+    fields: [servers.deploymentId],
+    references: [deployments.id],
+  }),
+  tools: many(tools),
+}))
+
+export const toolsRelations = relations(tools, ({ one }) => ({
+  server: one(servers, {
+    fields: [tools.serverId],
+    references: [servers.id],
+  }),
 }))
 
 export type Deployment = typeof deployments.$inferSelect
+export type Tool = typeof tools.$inferSelect
 export type Repo = typeof repos.$inferSelect
 export type DeploymentStatus = (typeof deploymentStatusEnum.enumValues)[number]

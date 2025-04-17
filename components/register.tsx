@@ -49,7 +49,7 @@ export function Register() {
   }
 
   return (
-    <div className="w-full max-w-xl">
+    <div className="mx-auto w-full max-w-xl">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Controller

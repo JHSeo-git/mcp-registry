@@ -6,6 +6,7 @@ import "./globals.css"
 
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/sonner"
+import Providers from "@/components/providers"
 
 const fontSans = GeistSans
 const fontMono = GeistMono
@@ -23,8 +24,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={cn("min-h-svh font-sans antialiased", fontSans.variable, fontMono.variable)}>
-        <div className="bg-background relative flex min-h-svh flex-col">{children}</div>
-        <Toaster />
+        <Providers>
+          <div className="bg-background relative flex min-h-svh flex-col">{children}</div>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   )

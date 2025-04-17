@@ -34,7 +34,7 @@ sequenceDiagram
     API-->>Client: 레포지토리 목록 반환
 
     %% 배포 목록 조회
-    Client->>API: GET /api/mcp/deployments?repo-key={key}
+    Client->>API: GET /api/mcp/deployments/{repoKey}
     API->>DB: 배포 목록 조회
     DB-->>API: 배포 목록
     API-->>Client: 배포 목록 반환

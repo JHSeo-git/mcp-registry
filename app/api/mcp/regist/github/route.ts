@@ -1,9 +1,10 @@
 import path from "node:path"
 import { NextRequest, NextResponse } from "next/server"
 import { eq, sql } from "drizzle-orm"
+import title from "title"
 
 import { db } from "@/lib/db/drizzle"
-import { deployments, DeploymentStatus, repos } from "@/lib/db/schema"
+import { deployments, DeploymentStatus, repos, servers } from "@/lib/db/schema"
 import { genenerateUUID } from "@/lib/db/utils"
 import {
   checkFileExists,
@@ -75,7 +76,7 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
   })
 
   if (!repository) {
-    const inserted = await db
+    const insertedRepositories = await db
       .insert(repos)
       .values({
         id: genenerateUUID(),
@@ -89,14 +90,14 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
       })
       .returning()
 
-    if (!inserted || inserted.length === 0) {
+    if (!insertedRepositories || insertedRepositories.length === 0) {
       throw new Error("Failed to insert repository")
     }
 
-    repository = inserted[0]
+    repository = insertedRepositories[0]
   }
 
-  const inserted = await db
+  const insertedDeployments = await db
     .insert(deployments)
     .values({
       id: genenerateUUID(),
@@ -110,16 +111,32 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
     })
     .returning()
 
-  if (!inserted || inserted.length === 0) {
+  if (!insertedDeployments || insertedDeployments.length === 0) {
     throw new Error("Failed to insert deployment")
   }
 
-  const deployment = inserted[0]
+  const deployment = insertedDeployments[0]
 
   const isExistsLocalRepo = await existsLocalRepo(repoName)
   if (isExistsLocalRepo) {
     await removeLocalRepo(repoName)
   }
+
+  const insertedServers = await db
+    .insert(servers)
+    .values({
+      id: genenerateUUID(),
+      name: getServerName(repository.name),
+      deploymentId: deployment.id,
+      createdBy: "SYSTEM",
+    })
+    .returning()
+
+  if (!insertedServers || insertedServers.length === 0) {
+    throw new Error("Failed to insert server")
+  }
+
+  const server = insertedServers[0]
 
   // 비동기 수행
   new Promise(async () => {
@@ -146,6 +163,8 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
       await removeLocalRepo(repoName)
 
       await updateLogs(deploymentId, `Deploy docker image successful!`, "SUCCESS")
+
+      // TODO: runner + mcp cli 통해서 tool 등록
     } catch (error) {
       console.error(error)
 
@@ -172,4 +191,9 @@ async function updateLogs(deploymentId: string, logs: string, status?: Deploymen
       updatedBy: "SYSTEM",
     })
     .where(eq(deployments.id, deploymentId))
+}
+
+function getServerName(repoName: string) {
+  const cleanedRepoName = repoName.replaceAll("-", " ")
+  return title(cleanedRepoName, { special: ["MCP"] })
 }

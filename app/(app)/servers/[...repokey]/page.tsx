@@ -1,11 +1,7 @@
-import { Deployments } from "@/components/deployments"
 import { GoBack } from "@/components/go-back"
+import { Server } from "@/components/server"
 
-export default async function DeploymentPage({
-  params,
-}: {
-  params: Promise<{ repokey: string[] }>
-}) {
+export default async function ServersPage({ params }: { params: Promise<{ repokey: string[] }> }) {
   const repoKeyArr = (await params).repokey
 
   if (!Array.isArray(repoKeyArr)) {
@@ -19,10 +15,7 @@ export default async function DeploymentPage({
       <div className="mb-6 flex items-center justify-center">
         <GoBack />
       </div>
-      <h1 className="text-center text-2xl font-bold">Deployments</h1>
-      <div className="mt-6 flex justify-center">
-        <Deployments repoKey={repoKey} />
-      </div>
+      <Server repoKey={repoKey} />
     </div>
   )
 }
