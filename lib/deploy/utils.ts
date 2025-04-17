@@ -1,33 +1,6 @@
-import { spawn, SpawnOptionsWithoutStdio } from "node:child_process"
 import fsPromises from "node:fs/promises"
 import path from "node:path"
-
-type GitRegistry = "github" | "gitlab" | "bitbucket"
-interface GetRepoUrlOptions {
-  registry: GitRegistry
-  owner: string
-  repo: string
-}
-export const getRepoUrl = ({ registry, owner, repo }: GetRepoUrlOptions) => {
-  switch (registry) {
-    case "github":
-      return `https://github.com/${owner}/${repo}.git`
-    case "gitlab":
-      return `https://gitlab.com/${owner}/${repo}.git`
-    case "bitbucket":
-      return `https://bitbucket.org/${owner}/${repo}.git`
-    default:
-      throw new Error(`Invalid registry: ${registry}`)
-  }
-}
-
-interface GetLgcnsRepoUrlOptions {
-  project: string
-  repo: string
-}
-export const getLgcnsRepoUrl = ({ project, repo }: GetLgcnsRepoUrlOptions) => {
-  return `https://wire.lgcns.com/bitbucket/scm/${project}/${repo}.git`
-}
+import { execa, Options } from "execa"
 
 const CLONE_ROOT_DIR = "/tmp/mcp-registry"
 
@@ -50,12 +23,8 @@ export const removeLocalRepo = async (repo: string) => {
   await fsPromises.rm(cloneDir, { recursive: true, force: true })
 }
 
-export const executeCommand = async (
-  command: string,
-  args: string[],
-  options: SpawnOptionsWithoutStdio = {}
-) => {
-  const process = spawn(command, args, options)
+export const executeCommand = async (command: string, args: string[], options: Options = {}) => {
+  const process = execa(command, args, options)
   try {
     const result = await new Promise((resolve, reject) => {
       process.on("close", (code) => {
@@ -65,6 +34,9 @@ export const executeCommand = async (
         }
 
         resolve(true)
+      })
+      process.on("error", (err) => {
+        console.error("execa error", err)
       })
     })
 
@@ -78,4 +50,13 @@ export const executeCommand = async (
 
 const commandMessage = (command: string, args: string[]) => {
   return `${command} ${args.join(" ")}`
+}
+
+export async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    await fsPromises.stat(filePath)
+    return true
+  } catch {
+    return false
+  }
 }

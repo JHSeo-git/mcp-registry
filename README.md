@@ -1,12 +1,67 @@
 # mcp-registry
 
-## deployment
+## Get started
 
-1. github repository list up
-2. github repository 선택
-3. deployment 클릭
+### .env
 
----
+```bash
+cp .env.example .env
+```
+
+```
+POSTGRES_DB="your database name"
+POSTGRES_USER="your database username"
+POSTGRES_PASSWORD="your database password"
+POSTGRES_URL="your database url"
+
+DOCKER_DOMAIN="your docker domain"
+DOCKER_USER="your docker username"
+DOCKER_PASSWORD="your docker password"
+
+GITHUB_TOKEN="your github token"
+```
+
+### Installation
+
+- bun: https://bun.sh/docs/installation
+
+```bash
+bun i
+```
+
+### Docker compose up
+
+```bash
+docker compose up -d
+```
+
+### DB Migration
+
+```bash
+bun db:m
+```
+
+### Development run
+
+```bash
+bun dev
+```
+
+## How to regist
+
+### public
+
+1. repository form 입력
+2. regist 클릭
+
+### private
+
+1. token 발급
+2. wire code project list up
+3. repository 선택
+4. regist 클릭
+
+## deployment process
 
 1. github repository를 clone해서
 2. Dockerfile이 있는지 확인하고
@@ -16,97 +71,32 @@
    간단하게 처리한다면 deploy... 라고만 표시할 수도 있음
 6. 각각 배포 상태를 db 에 저장하여 관리
 
-### smithery deployment 참고
-
-supabase + supabase.realtime 사용함
-
-```json
-{
-  "ref": null,
-  "event": "postgres_changes",
-  "payload": {
-    "data": {
-      "table": "deployments",
-      "type": "UPDATE",
-      "record": {
-        "branch": "main",
-        "commit": "1790685d5111bb50f2947adcf24f0650a37a4fe2",
-        "commit_message": "feat: update mcp server configs",
-        "created_at": "2025-04-13T13:11:35.432204",
-        "deployment_url": "https://smithery-a32267b9-a1d0-49e3-b112-d4f72a9dcc52.fly.dev",
-        "id": "8f84a3b5-6501-4819-9c4d-b15463ab575f",
-        "logs": "Found cached build config files...\nUsing smithery.yaml from repository\nUsing Dockerfile from repository\nSuccessfully obtained required build config files. Preparing build...\nBuilding Docker image...\nStarting deployment...\nDeployment successful!\n",
-        "repo": "610bf9d1-ccb8-44b0-9878-16be3b29075e",
-        "server_id": "a32267b9-a1d0-49e3-b112-d4f72a9dcc52",
-        "status": "SUCCESS",
-        "updated_at": "2025-04-13T13:12:10.343931"
-      },
-      "columns": [
-        {
-          "name": "id",
-          "type": "uuid"
-        },
-        {
-          "name": "server_id",
-          "type": "uuid"
-        },
-        {
-          "name": "status",
-          "type": "deployment_status"
-        },
-        {
-          "name": "commit",
-          "type": "text"
-        },
-        {
-          "name": "commit_message",
-          "type": "text"
-        },
-        {
-          "name": "repo",
-          "type": "uuid"
-        },
-        {
-          "name": "branch",
-          "type": "text"
-        },
-        {
-          "name": "deployment_url",
-          "type": "text"
-        },
-        {
-          "name": "created_at",
-          "type": "timestamp"
-        },
-        {
-          "name": "updated_at",
-          "type": "timestamp"
-        },
-        {
-          "name": "logs",
-          "type": "text"
-        }
-      ],
-      "errors": null,
-      "schema": "public",
-      "commit_timestamp": "2025-04-13T13:12:10.349Z",
-      "old_record": {
-        "id": "8f84a3b5-6501-4819-9c4d-b15463ab575f"
-      }
-    },
-    "ids": [18106521, 98814511]
-  },
-  "topic": "realtime:deployments"
-}
-```
-
 ## runner
 
-- client에서 [mcp-runner](https://github.com/JHSeo-git/mcp-runner) websocket server를 통해 mcp 연결 및 tool 호출
+### candidate 1: @modelcontextprotocol/inspector --cli
 
-  - GET /ws 으로 websocket 실행 및 주소를 얻어오고
-  - wss:// 연결 하여 tool 호출
+> not deployed yet, but soon
+
+```bash
+npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/list
+npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/call --tool-name echo --tool-arg message=test
+```
+
+### candidate 2: stdio <-> sse gateway
+
+> https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/63#discussioncomment-11639955  
+> https://github.com/supercorp-ai/supergateway
+
+```bash
+docker run -it --rm -p 8000:8000 supercorp/supergateway \
+    --stdio "npx -y @modelcontextprotocol/server-filesystem /" \
+    --port 8000
+```
 
 - [smithery serverless hosting](https://smithery.ai/docs/deployments#serverless-hosting)처럼 x분(e.g: 5분) timeout으로 실행
 
   - websocket 실행 시 5분 timeout 처리
+
+## TODO
+
+- [ ] github token 용 프로젝트 계정 생성 필요
