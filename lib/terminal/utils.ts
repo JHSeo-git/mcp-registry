@@ -9,15 +9,18 @@ export const getCloneDir = async (name: string) => {
   await fsPromises.mkdir(cloneDir, { recursive: true })
   return cloneDir
 }
+
 export const existsRemoteRepo = async (repo: string) => {
   const isExistsRepo = await fetch(repo).then((res) => res.status === 200)
   return isExistsRepo
 }
+
 export const existsLocalRepo = async (repo: string) => {
   const cloneDir = path.join(CLONE_ROOT_DIR, repo)
   const isExistsRepo = await fsPromises.stat(cloneDir)
   return Boolean(isExistsRepo)
 }
+
 export const removeLocalRepo = async (repo: string) => {
   const cloneDir = path.join(CLONE_ROOT_DIR, repo)
   await fsPromises.rm(cloneDir, { recursive: true, force: true })

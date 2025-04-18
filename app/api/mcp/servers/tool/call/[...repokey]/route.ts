@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db/drizzle"
 import { environments, repos } from "@/lib/db/schema"
-import { createEnv, createEnvCliArgs } from "@/lib/docker/utils"
+import { createEnv, createEnvCliArgs, dockerPull } from "@/lib/docker/utils"
 import { toolCall, ToolCallResult } from "@/lib/mcp/utils"
 import { ToolCallRequestSchema, ToolCallResponseSchemaType } from "@/lib/schema/server"
 import { ApiResponse } from "@/app/api/types"
@@ -45,6 +45,8 @@ export async function POST(
     if (!tag) {
       return NextResponse.json(ApiResponse.error("Server tag not found"), { status: 404 })
     }
+
+    await dockerPull(tag)
 
     const envs = await db.query.environments.findMany({
       where: eq(environments.serverId, foundRepository.servers.id),
@@ -88,7 +90,7 @@ export async function POST(
 
     return NextResponse.json(ApiResponse.success(response))
   } catch (error) {
-    console.error("Error fetching deployments:", error)
+    console.error("Error tool call:", error)
 
     let errorMessage = "Internal Server Error"
     if (error instanceof Error) {

@@ -64,7 +64,7 @@ export async function GET(
 
     return NextResponse.json(ApiResponse.success(response))
   } catch (error) {
-    console.error("Error fetching deployments:", error)
+    console.error("Error fetching repository:", error)
 
     let errorMessage = "Internal Server Error"
     if (error instanceof Error) {

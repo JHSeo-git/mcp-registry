@@ -44,6 +44,10 @@ export async function dockerBuildAndPush(
   return tag
 }
 
+export async function dockerPull(tag: string) {
+  await executeCommand("docker", ["pull", tag])
+}
+
 export async function dockerRun(tag: string) {
   const port = await getPort({ port: portNumbers(8000, 9000) })
   await executeCommand("docker", ["run", "--rm", "-p", `${port}:8000`, tag])

@@ -5,14 +5,14 @@
 ```mermaid
 erDiagram
     repos ||--o{ deployments : "has"
-    repos ||--o{ servers : "has"
+    repos ||--|| servers : "has"
     servers ||--o{ deployments : "has"
     servers ||--o{ tools : "has"
     servers ||--o{ environments : "has"
 
     repos {
-        uuid id PK
-        string repo_key
+        uuid id "PK"
+        string repo_key "UQ"
         string project
         string name
         string base_directory
@@ -25,15 +25,15 @@ erDiagram
     }
 
     deployments {
-        uuid id PK
+        uuid id "PK"
         enum status
         string commit
         string commit_message
         string branch
         string deployment_url
         string logs
-        uuid repo_id FK
-        uuid server_id FK
+        uuid repo_id "FK"
+        uuid server_id "FK"
         timestamp created_at
         string created_by
         timestamp updated_at
@@ -41,10 +41,11 @@ erDiagram
     }
 
     servers {
-        uuid id PK
+        uuid id "PK"
         string name
         string description
-        uuid repo_id FK
+        uuid repo_id "FK,UQ"
+        string tag
         string transport_type
         timestamp created_at
         string created_by
@@ -53,10 +54,10 @@ erDiagram
     }
 
     tools {
-        uuid id PK
+        uuid id "PK"
         string name
         jsonb input_schema
-        uuid server_id FK
+        uuid server_id "FK"
         timestamp created_at
         string created_by
         timestamp updated_at
@@ -64,10 +65,10 @@ erDiagram
     }
 
     environments {
-        uuid id PK
+        uuid id "PK"
         string key
         string value
-        uuid server_id FK
+        uuid server_id "FK"
         timestamp created_at
         string created_by
         timestamp updated_at
@@ -82,10 +83,10 @@ erDiagram
    - 하나의 레포지토리는 여러 개의 배포를 가질 수 있습니다.
    - `deployments.repo_id`가 `repos.id`를 참조합니다.
 
-2. **Repos - Servers (1:N)**
+2. **Repos - Servers (1:1)**
 
-   - 하나의 레포지토리는 여러 개의 서버를 가질 수 있습니다.
-   - `servers.repo_id`가 `repos.id`를 참조합니다.
+   - 하나의 레포지토리는 하나의 서버를 가질 수 있습니다.
+   - `servers.repo_id`가 `repos.id`를 참조하며, 유니크 제약조건이 있습니다.
 
 3. **Servers - Deployments (1:N)**
 
@@ -105,14 +106,15 @@ erDiagram
 
 ## 주요 인덱스
 
-- `idx_repos_repo_key`: `repos.repo_key`에 대한 인덱스
-- `idx_servers_repo_id`: `servers.repo_id`에 대한 인덱스
+- `uq_repos_repo_key`: `repos.repo_key`에 대한 유니크 인덱스
+- `uq_servers_repo_id`: `servers.repo_id`에 대한 유니크 인덱스
 - `idx_tools_server_id`: `tools.server_id`에 대한 인덱스
 - `idx_environments_server_id`: `environments.server_id`에 대한 인덱스
-- `idx_deployments_repo_id`: `deployments.repo_id`에 대한 인덱스
-- `idx_deployments_server_id`: `deployments.server_id`에 대한 인덱스
+- `idx_deployments_repo_id_server_id`: `deployments.repo_id`와 `server_id`의 복합 인덱스
 
 ## 유니크 제약조건
 
+- `uq_repos_repo_key`: `repos` 테이블의 `repo_key`
+- `uq_servers_repo_id`: `servers` 테이블의 `repo_id`
 - `uq_tools_server_id_name`: `tools` 테이블의 `server_id`와 `name` 조합
 - `uq_environments_server_id_key`: `environments` 테이블의 `server_id`와 `key` 조합
