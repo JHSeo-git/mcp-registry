@@ -1,7 +1,5 @@
 import { z } from "zod"
 
-import { DeploymentStatusSchema } from "./deployment"
-
 export const RepositorySchema = z.object({
   registry: z.string(),
   repoKey: z.string(),

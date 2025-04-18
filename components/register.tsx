@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Controller, useForm } from "react-hook-form"
+import { Plus, Trash } from "lucide-react"
+import { Controller, useFieldArray, useForm } from "react-hook-form"
 
 import { GithubRegistSchema, GithubRegistSchemaType } from "@/lib/schema/regist"
 import { cn } from "@/lib/utils"
@@ -13,6 +14,7 @@ import { Logs } from "./logs"
 import { Button } from "./ui/button"
 import { Form, FormControl, FormItem, FormLabel, FormMessage } from "./ui/form"
 import { Input } from "./ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
 export function Register() {
   const [deploymentId, setDeploymentId] = useState<string>()
@@ -20,14 +22,21 @@ export function Register() {
 
   const { isLoading, fetchRegistGithub } = useRegistGithub()
 
-  const form = useForm({
+  const form = useForm<GithubRegistSchemaType>({
     resolver: zodResolver(GithubRegistSchema),
     defaultValues: {
+      transportType: "stdio",
       repoKeyPostfix: "",
       owner: "",
       repo: "",
       baseDirectory: ".",
+      envs: [],
     },
+  })
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "envs",
   })
 
   const onSubmit = async (data: GithubRegistSchemaType) => {
@@ -43,6 +52,7 @@ export function Register() {
     const registeredDeploymentId = await fetchRegistGithub({
       ...data,
       repoKey: `${repoKeyPrefix}/${data.repoKeyPostfix}`,
+      envs: data.envs.filter((env) => env.key !== "" && env.value !== ""),
     })
 
     setDeploymentId(registeredDeploymentId)
@@ -116,6 +126,75 @@ export function Register() {
               </FormItem>
             )}
           />
+          <Controller
+            control={form.control}
+            name="transportType"
+            render={({ field }) => (
+              <FormItem className="mt-4">
+                <FormLabel>Transport Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a transport type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="stdio">stdio</SelectItem>
+                    <SelectItem value="sse" disabled>
+                      sse
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="mt-4 flex items-center justify-between">
+            <FormLabel className="">Variables</FormLabel>
+            <Button type="button" size="icon" onClick={() => append({ key: "", value: "" })}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {fields.map((field, index) => (
+            <Controller
+              key={field.id}
+              control={form.control}
+              name={`envs.${index}`}
+              render={({ field: { value, onChange, ...field } }) => (
+                <FormItem className="mt-2">
+                  <FormControl>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        placeholder="key"
+                        value={value.key}
+                        onChange={(e) => {
+                          onChange({ ...value, key: e.target.value })
+                        }}
+                        {...field}
+                      />
+                      <Input
+                        placeholder="value"
+                        value={value.value}
+                        onChange={(e) => {
+                          onChange({ ...value, value: e.target.value })
+                        }}
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
           <div className="mt-6">
             <Button type="submit" variant="outline" disabled={isLoading} className="w-full">
               {isLoading && <Icons.spinner className={cn("h-4 w-4 animate-spin")} />}

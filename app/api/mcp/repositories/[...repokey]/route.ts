@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { desc, eq } from "drizzle-orm"
 
 import { db } from "@/lib/db/drizzle"
-import { deployments, repos, servers, tools } from "@/lib/db/schema"
+import { deployments, repos, tools } from "@/lib/db/schema"
 import { RepositoryResponseSchemaType } from "@/lib/schema/repo"
 import { ApiResponse } from "@/app/api/types"
 

@@ -1,5 +1,10 @@
 # mcp-registry
 
+## 서버 요구 사항
+
+- docker
+- node
+
 ## Get started
 
 ### .env
@@ -71,21 +76,19 @@ bun dev
    간단하게 처리한다면 deploy... 라고만 표시할 수도 있음
 6. 각각 배포 상태를 db 에 저장하여 관리
 
-## runner
+## tool playground
 
-### candidate 1: @modelcontextprotocol/inspector --cli
+1. connect 클릭
+2. 백엔드에서 mcp서버 실행: docker run?
+   어디서 실행? 백엔드 서버에서 docker run?
+   아니면 다른 곳에서 실행? 그러면 어떻게 클라이언트가 연결함?
 
-> not deployed yet, but soon
-
-```bash
-npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/list
-npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/call --tool-name echo --tool-arg message=test
-```
-
-### candidate 2: stdio <-> sse gateway
+### tool runner
 
 > https://github.com/modelcontextprotocol/modelcontextprotocol/discussions/63#discussioncomment-11639955  
 > https://github.com/supercorp-ai/supergateway
+
+stdio <-> sse gateway
 
 ```bash
 docker run -it --rm -p 8000:8000 supercorp/supergateway \
@@ -96,6 +99,15 @@ docker run -it --rm -p 8000:8000 supercorp/supergateway \
 - [smithery serverless hosting](https://smithery.ai/docs/deployments#serverless-hosting)처럼 x분(e.g: 5분) timeout으로 실행
 
   - websocket 실행 시 5분 timeout 처리
+
+### tool client
+
+> not deployed yet, but soon
+
+```bash
+npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/list
+npx -y @modelcontextprotocol/inspector --cli http://localhost:8181 --method tools/call --tool-name echo --tool-arg message=test
+```
 
 ## TODO
 

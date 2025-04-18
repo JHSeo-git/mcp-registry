@@ -15,7 +15,9 @@ export default async function ServersPage({ params }: { params: Promise<{ repoke
       <div className="mb-6 flex items-center justify-center">
         <GoBack />
       </div>
-      <Server repoKey={repoKey} />
+      <div>
+        <Server repoKey={repoKey} />
+      </div>
     </div>
   )
 }

@@ -11,23 +11,31 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 
 export function Servers() {
   const [items, setItems] = useState<RepositorySchemaType[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const fetchDeployments = useCallback(async () => {
-    const response = await fetch(`/api/mcp/repositories`)
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/mcp/repositories`)
 
-    const result = await response.json()
+      const result = await response.json()
 
-    if (result.status !== "success") {
-      throw new Error(result.error)
+      if (result.status !== "success") {
+        throw new Error(result.error)
+      }
+
+      const parsed = RepositoriesResponseSchema.safeParse(result.data)
+
+      if (!parsed.success) {
+        throw new Error(`Invalid response: ${parsed.error.message}`)
+      }
+
+      setItems(parsed.data.repositories)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLoading(false)
     }
-
-    const parsed = RepositoriesResponseSchema.safeParse(result.data)
-
-    if (!parsed.success) {
-      throw new Error(`Invalid response: ${parsed.error.message}`)
-    }
-
-    setItems(parsed.data.repositories)
   }, [])
 
   useEffect(() => {
@@ -47,7 +55,14 @@ export function Servers() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {items.length === 0 && (
+        {isLoading && (
+          <TableRow>
+            <TableCell colSpan={6} className="bg-muted h-[100px] text-center">
+              Loading...
+            </TableCell>
+          </TableRow>
+        )}
+        {!isLoading && items.length === 0 && (
           <TableRow>
             <TableCell colSpan={6} className="bg-muted h-[100px] text-center">
               No repositories found

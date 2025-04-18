@@ -7,7 +7,7 @@ sequenceDiagram
     participant Docker as Docker Registry
 
     %% 레포지토리 등록 프로세스
-    Client->>API: POST /api/mcp/regist/github
+    Client->>API: POST /api/mcp/regist
     API->>GitHub: 레포지토리 정보 조회
     GitHub-->>API: 레포지토리 정보
     API->>DB: 레포지토리 정보 저장
@@ -34,7 +34,7 @@ sequenceDiagram
     API-->>Client: 레포지토리 목록 반환
 
     %% 배포 목록 조회
-    Client->>API: GET /api/mcp/deployments/{repoKey}
+    Client->>API: GET /api/mcp/deployments
     API->>DB: 배포 목록 조회
     DB-->>API: 배포 목록
     API-->>Client: 배포 목록 반환
@@ -72,8 +72,7 @@ sequenceDiagram
 
 4. **배포 목록 조회**
 
-   - 특정 레포지토리의 배포 목록 조회
-   - repo-key를 기준으로 필터링
+   - 모든 배포 목록 조회
    - Drizzle DB에서 데이터 조회
    - 클라이언트에 목록 반환
 

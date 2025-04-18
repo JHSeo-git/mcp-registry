@@ -8,7 +8,7 @@ export default function ServersPage() {
         <GoBack />
       </div>
       <h1 className="text-center text-2xl font-bold">Servers</h1>
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6">
         <Servers />
       </div>
     </div>

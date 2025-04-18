@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { desc, eq } from "drizzle-orm"
+import { desc, eq, inArray } from "drizzle-orm"
 
 import { db } from "@/lib/db/drizzle"
-import { deployments, repos } from "@/lib/db/schema"
+import { deployments, environments, repos, servers } from "@/lib/db/schema"
 import { DeploymentsResponseSchemaType } from "@/lib/schema/deployment"
+import { TransportTypeSchemaType } from "@/lib/schema/server"
 import { ApiResponse } from "@/app/api/types"
 
 export async function GET(
@@ -23,6 +24,7 @@ export async function GET(
       .select()
       .from(deployments)
       .innerJoin(repos, eq(deployments.repoId, repos.id))
+      .innerJoin(servers, eq(deployments.serverId, servers.id))
       .where(eq(repos.repoKey, repoKey))
       .orderBy(desc(deployments.updatedAt))
 
@@ -30,8 +32,15 @@ export async function GET(
       return NextResponse.json(ApiResponse.error("Deployment not found"), { status: 404 })
     }
 
+    const foundEnvs = await db.query.environments.findMany({
+      where: inArray(
+        environments.serverId,
+        Array.from(new Set(foundDeployments.map(({ servers }) => servers.id)))
+      ),
+    })
+
     const response: DeploymentsResponseSchemaType = {
-      deployments: foundDeployments.map(({ deployments, repos }) => ({
+      deployments: foundDeployments.map(({ deployments, repos, servers }) => ({
         id: deployments.id,
         commit: deployments.commit,
         commitMessage: deployments.commitMessage,
@@ -43,6 +52,11 @@ export async function GET(
         project: repos.project,
         name: repos.name,
         baseDirectory: repos.baseDirectory,
+        transportType: servers.transportType as TransportTypeSchemaType,
+      })),
+      envs: foundEnvs.map(({ key, value }) => ({
+        key,
+        value,
       })),
     }
 

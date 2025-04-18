@@ -4,18 +4,21 @@ import { eq, sql } from "drizzle-orm"
 import title from "title"
 
 import { db } from "@/lib/db/drizzle"
-import { deployments, DeploymentStatus, repos, servers } from "@/lib/db/schema"
+import { createTools } from "@/lib/db/queries"
+import { deployments, DeploymentStatus, environments, repos, servers } from "@/lib/db/schema"
 import { genenerateUUID } from "@/lib/db/utils"
+import { createEnv, createEnvCliArgs, dockerBuildAndPush, dockerLogin } from "@/lib/docker/utils"
+import { getRepository } from "@/lib/github"
+import { toolList, ToolListResult } from "@/lib/mcp/utils"
+import { EnvironmentSchemaType } from "@/lib/schema/deployment"
+import { GithubRegistRequestSchema, GithubRegistResponseSchemaType } from "@/lib/schema/regist"
 import {
   checkFileExists,
   executeCommand,
   existsLocalRepo,
   getCloneDir,
   removeLocalRepo,
-} from "@/lib/deploy/utils"
-import { dockerBuildAndPush, dockerLogin } from "@/lib/docker/utils"
-import { getRepository } from "@/lib/github"
-import { GithubRegistRequestSchema, GithubRegistResponseSchemaType } from "@/lib/schema/regist"
+} from "@/lib/terminal/utils"
 import { ApiResponse } from "@/app/api/types"
 
 export async function POST(req: NextRequest) {
@@ -24,22 +27,30 @@ export async function POST(req: NextRequest) {
   const parsed = GithubRegistRequestSchema.safeParse(body)
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
+    return NextResponse.json(ApiResponse.error("Invalid request body"), { status: 400 })
+  }
+
+  // TODO: sse 는 추후 고려
+  if (parsed.data.transportType === "sse") {
+    return NextResponse.json(ApiResponse.error("SSE is not supported yet"), { status: 400 })
   }
 
   try {
-    const { repoKey, owner, repo, baseDirectory } = parsed.data
+    const { transportType, repoKey, owner, repo, baseDirectory, envs } = parsed.data
 
     const githubRepository = await getRepository(owner, repo)
 
     const deploymentId = await deploy({
+      transportType,
       repoKey,
       ownerName: owner,
       repoName: repo,
       baseDirectory,
+      envs,
     })
 
     const response: GithubRegistResponseSchemaType = {
+      transportType,
       repoKey,
       owner,
       repo: githubRepository.name,
@@ -48,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(ApiResponse.success(response))
   } catch (error) {
-    console.error("/api/mcp/regist/github Error:", error)
+    console.error("Error regist github:", error)
 
     let errorMessage = "Internal Server Error"
     if (error instanceof Error) {
@@ -60,12 +71,21 @@ export async function POST(req: NextRequest) {
 }
 
 interface DeployOptions {
+  transportType: "stdio" | "sse"
   repoKey: string
   ownerName: string
   repoName: string
   baseDirectory: string
+  envs: EnvironmentSchemaType[]
 }
-async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOptions) {
+async function deploy({
+  transportType,
+  repoKey,
+  ownerName,
+  repoName,
+  baseDirectory,
+  envs,
+}: DeployOptions) {
   const githubRepository = await getRepository(ownerName, repoName)
 
   const cloneUrl = githubRepository.clone_url
@@ -97,6 +117,40 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
     repository = insertedRepositories[0]
   }
 
+  let server = await db.query.servers.findFirst({
+    where: eq(servers.repoId, repository.id),
+  })
+
+  if (!server) {
+    const insertedServers = await db
+      .insert(servers)
+      .values({
+        id: genenerateUUID(),
+        name: getServerName(repository.repoKey),
+        // description: "",
+        repoId: repository.id,
+        transportType,
+        createdBy: "SYSTEM",
+      })
+      .returning()
+
+    if (!insertedServers || insertedServers.length === 0) {
+      throw new Error("Failed to insert server")
+    }
+
+    server = insertedServers[0]
+  } else {
+    if (server.transportType !== transportType) {
+      await db
+        .update(servers)
+        .set({
+          transportType,
+          updatedBy: "SYSTEM",
+        })
+        .where(eq(servers.id, server.id))
+    }
+  }
+
   const insertedDeployments = await db
     .insert(deployments)
     .values({
@@ -107,6 +161,7 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
       commitMessage: githubRepository.commitMessage,
       logs: "Starting regist...",
       repoId: repository.id,
+      serverId: server.id,
       createdBy: "SYSTEM",
     })
     .returning()
@@ -122,21 +177,22 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
     await removeLocalRepo(repoName)
   }
 
-  const insertedServers = await db
-    .insert(servers)
-    .values({
-      id: genenerateUUID(),
-      name: getServerName(repository.name),
-      deploymentId: deployment.id,
-      createdBy: "SYSTEM",
-    })
-    .returning()
-
-  if (!insertedServers || insertedServers.length === 0) {
-    throw new Error("Failed to insert server")
-  }
-
-  const server = insertedServers[0]
+  await db.delete(environments).where(eq(environments.serverId, server.id))
+  const insertedEnvs =
+    envs.length > 0
+      ? await db
+          .insert(environments)
+          .values(
+            envs.map((env) => ({
+              id: genenerateUUID(),
+              key: env.key,
+              value: env.value,
+              serverId: server.id,
+              createdBy: "SYSTEM",
+            }))
+          )
+          .returning()
+      : []
 
   // 비동기 수행
   new Promise(async () => {
@@ -158,15 +214,43 @@ async function deploy({ repoKey, ownerName, repoName, baseDirectory }: DeployOpt
       await updateLogs(deploymentId, `Docker Registry Connect Success!`, "IN_PROGRESS")
 
       await updateLogs(deploymentId, `Building Docker image...`, "IN_PROGRESS")
-      await dockerBuildAndPush(cloneDir, baseDirectory, ownerName, repoName)
+      const tag = await dockerBuildAndPush(cloneDir, baseDirectory, ownerName, repoName)
+      await db.update(servers).set({ tag, updatedBy: "SYSTEM" }).where(eq(servers.id, server.id))
+
+      await updateLogs(deploymentId, `Generate a mcp metadata...`, "IN_PROGRESS")
+      let toolListResult: ToolListResult = []
+      if (transportType === "stdio") {
+        toolListResult = await toolList({
+          type: "stdio",
+          command: "docker",
+          args: ["run", "-i", "--rm", ...createEnvCliArgs(insertedEnvs), tag],
+          env: createEnv(insertedEnvs),
+        })
+      } else {
+        // TODO: sse는 현재 고려 안함
+        //
+        // sse 배포 시나리오가 들어간다면 여기에 추가
+        // await updateLogs(deploymentId, `Deploy MCP Server...`, "IN_PROGRESS")
+        // const deploymentUrl = ""
+        // const sseUrl = `${deploymentUrl}/sse`
+        //
+        // const port = await dockerRun(tag)
+        // const sseUrl = `http://localhost:${port}/sse`
+        // tools = await toolList({
+        //   type: "sse",
+        //   url: sseUrl,
+        // })
+      }
+      await createTools({
+        tools: toolListResult.map((tool) => ({ name: tool.name, inputSchema: tool.inputSchema })),
+        serverId: server.id,
+      })
 
       await removeLocalRepo(repoName)
 
       await updateLogs(deploymentId, `Deploy docker image successful!`, "SUCCESS")
-
-      // TODO: runner + mcp cli 통해서 tool 등록
     } catch (error) {
-      console.error(error)
+      console.error("Error deploy github:", error)
 
       if (error instanceof Error) {
         if (deploymentId) {
@@ -193,7 +277,9 @@ async function updateLogs(deploymentId: string, logs: string, status?: Deploymen
     .where(eq(deployments.id, deploymentId))
 }
 
-function getServerName(repoName: string) {
-  const cleanedRepoName = repoName.replaceAll("-", " ")
-  return title(cleanedRepoName, { special: ["MCP"] })
+function getServerName(repoKey: string) {
+  const serverName = path.basename(repoKey)
+
+  const cleanedServerName = serverName.replaceAll("-", " ")
+  return title(cleanedServerName, { special: ["MCP"] })
 }
