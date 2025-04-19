@@ -58,6 +58,7 @@ export async function GET(
       tools: foundTools.map((tool) => ({
         id: tool.id,
         name: tool.name,
+        description: tool.description,
         inputSchema: tool.inputSchema,
       })),
     }

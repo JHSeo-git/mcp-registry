@@ -59,6 +59,7 @@ CREATE TABLE "servers" (
 CREATE TABLE "tools" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
+	"description" text,
 	"input_schema" jsonb NOT NULL,
 	"server_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,

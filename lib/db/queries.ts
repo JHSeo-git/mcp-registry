@@ -7,6 +7,7 @@ import { genenerateUUID } from "./utils"
 interface CreateToolsOptions {
   tools: {
     name: string
+    description?: string | null
     inputSchema: unknown
   }[]
   serverId: string
@@ -22,6 +23,7 @@ export async function createTools(options: CreateToolsOptions) {
     options.tools.map((tool) => ({
       id: genenerateUUID(),
       name: tool.name,
+      description: tool.description,
       inputSchema: tool.inputSchema,
       serverId: options.serverId,
       createdBy: "SYSTEM",

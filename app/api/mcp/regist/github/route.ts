@@ -242,7 +242,11 @@ async function deploy({
         // })
       }
       await createTools({
-        tools: toolListResult.map((tool) => ({ name: tool.name, inputSchema: tool.inputSchema })),
+        tools: toolListResult.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema,
+        })),
         serverId: server.id,
       })
 

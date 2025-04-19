@@ -48,6 +48,7 @@ export const tools = pgTable(
   {
     id: uuid("id").primaryKey(),
     name: text("name").notNull(),
+    description: text("description"),
     inputSchema: jsonb("input_schema").notNull(),
     serverId: uuid("server_id").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),

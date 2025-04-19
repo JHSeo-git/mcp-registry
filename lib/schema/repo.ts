@@ -21,6 +21,7 @@ export type RepositoriesResponseSchemaType = z.infer<typeof RepositoriesResponse
 export const ToolSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().nullable(),
   inputSchema: z.unknown(),
 })
 

@@ -1,5 +1,5 @@
 {
-  "id": "b2486915-b583-4985-9b4f-141e2247709d",
+  "id": "22c9c8eb-9f61-4a16-bbe5-5ecc479b8813",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -198,10 +198,7 @@
         "uq_environments_server_id_key": {
           "name": "uq_environments_server_id_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "server_id",
-            "key"
-          ]
+          "columns": ["server_id", "key"]
         }
       },
       "policies": {},
@@ -288,9 +285,7 @@
         "uq_repos_repo_key": {
           "name": "uq_repos_repo_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_key"
-          ]
+          "columns": ["repo_key"]
         }
       },
       "policies": {},
@@ -371,9 +366,7 @@
         "uq_servers_repo_id": {
           "name": "uq_servers_repo_id",
           "nullsNotDistinct": false,
-          "columns": [
-            "repo_id"
-          ]
+          "columns": ["repo_id"]
         }
       },
       "policies": {},
@@ -395,6 +388,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "input_schema": {
           "name": "input_schema",
@@ -458,10 +457,7 @@
         "uq_tools_server_id_name": {
           "name": "uq_tools_server_id_name",
           "nullsNotDistinct": false,
-          "columns": [
-            "server_id",
-            "name"
-          ]
+          "columns": ["server_id", "name"]
         }
       },
       "policies": {},
@@ -473,12 +469,7 @@
     "public.deployment_status": {
       "name": "deployment_status",
       "schema": "public",
-      "values": [
-        "SUCCESS",
-        "FAILED",
-        "PENDING",
-        "IN_PROGRESS"
-      ]
+      "values": ["SUCCESS", "FAILED", "PENDING", "IN_PROGRESS"]
     }
   },
   "schemas": {},
