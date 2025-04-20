@@ -21,6 +21,8 @@ A Registry for mcp servers.
 
 ![tool-call-ex-2](./docs/screenshot/tool-call-ex-2.png)
 
+![tool-call-ex-3](./docs/screenshot/tool-call-ex-3.png)
+
 ![deployments](./docs/screenshot/deployments.png)
 
 ![deployment](./docs/screenshot/deployment.png)
@@ -48,7 +50,7 @@ A Registry for mcp servers.
 - [node](https://nodejs.org/ko/download)
 - [bun](https://bun.sh/)
 - setup harbor(private docker registry): https://github.com/JHSeo-git/harbor-helm-starter
-- docker + docker compose:
+- docker + docker compose:  
   personal: [orbstack](https://orbstack.dev/)  
   company: [rancher desktop](https://rancherdesktop.io/)
 
