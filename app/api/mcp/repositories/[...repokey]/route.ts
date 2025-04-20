@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { desc, eq } from "drizzle-orm"
 
 import { db } from "@/lib/db/drizzle"
-import { deployments, repos, tools } from "@/lib/db/schema"
+import { deployments, environments, repos, tools } from "@/lib/db/schema"
 import { RepositoryResponseSchemaType } from "@/lib/schema/repo"
 import { ApiResponse } from "@/app/api/types"
 
@@ -41,6 +41,12 @@ export async function GET(
         })
       : []
 
+    const foundEnvs = latestDeployment?.servers
+      ? await db.query.environments.findMany({
+          where: eq(environments.serverId, latestDeployment.servers.id),
+        })
+      : []
+
     const response: RepositoryResponseSchemaType = {
       id: foundRepository.id,
       repoKey: foundRepository.repoKey,
@@ -60,6 +66,9 @@ export async function GET(
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
+      })),
+      envs: foundEnvs.map((env) => ({
+        key: env.key,
       })),
     }
 

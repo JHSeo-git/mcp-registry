@@ -54,9 +54,8 @@ export async function GET(
         baseDirectory: repos.baseDirectory,
         transportType: servers.transportType as TransportTypeSchemaType,
       })),
-      envs: foundEnvs.map(({ key, value }) => ({
+      envs: foundEnvs.map(({ key }) => ({
         key,
-        value,
       })),
     }
 

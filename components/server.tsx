@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form"
 import { toast } from "sonner"
 
 import { getPublicRepoUrl } from "@/lib/git/utils"
+import { EnvironmentSchemaType } from "@/lib/schema/environment"
 import {
   RepositoryResponseSchema,
   RepositoryResponseSchemaType,
@@ -22,6 +23,7 @@ import { Button, buttonVariants } from "./ui/button"
 import { Checkbox } from "./ui/checkbox"
 import { Form, FormControl, FormItem, FormLabel, FormMessage } from "./ui/form"
 import { Input } from "./ui/input"
+import { Label } from "./ui/label"
 import { Textarea } from "./ui/textarea"
 
 interface ServerProps {
@@ -31,6 +33,7 @@ interface ServerProps {
 export function Server({ repoKey }: ServerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [item, setItem] = useState<RepositoryResponseSchemaType>()
+  const [envs, setEnvs] = useState<EnvironmentSchemaType[]>([])
 
   const fetchRepository = useCallback(async () => {
     try {
@@ -51,6 +54,7 @@ export function Server({ repoKey }: ServerProps) {
       }
 
       setItem(parsed.data)
+      setEnvs(parsed.data.envs.map((env) => ({ ...env, value: "" })))
     } catch (error) {
       console.error(error)
       toast.error("Failed to fetch repository")
@@ -119,12 +123,36 @@ export function Server({ repoKey }: ServerProps) {
             </Button>
           </div> */}
         </div>
+        {item.envs.length > 0 && (
+          <div className="mt-2 rounded-md border p-4">
+            <p className="mb-4 text-base font-bold">Environment variables</p>
+            {item.envs.map((env) => (
+              <div key={env.key} className="flex flex-col gap-1">
+                <Label className="ml-1 text-sm font-medium" htmlFor={env.key}>
+                  {env.key}
+                </Label>
+                <Input
+                  id={env.key}
+                  placeholder={env.key}
+                  value={envs.find((e) => e.key === env.key)?.value ?? ""}
+                  onChange={(e) => {
+                    setEnvs(
+                      envs.map((stateEnv) =>
+                        stateEnv.key === env.key ? { ...stateEnv, value: e.target.value } : stateEnv
+                      )
+                    )
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
         <div className="mt-2 flex flex-col gap-2">
           {item.tools.length === 0 && (
             <div className="text-muted-foreground">No tools found for this repository</div>
           )}
           {item.tools.map((tool) => (
-            <ToolItem key={tool.id} repoKey={repoKey} tool={tool} />
+            <ToolItem key={tool.id} repoKey={repoKey} tool={tool} envs={envs} />
           ))}
         </div>
       </div>
@@ -138,7 +166,12 @@ function ConnectionDot({ isConnected }: { isConnected: boolean }) {
   return <div className={cn("h-2 w-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")} />
 }
 
-function ToolItem({ repoKey, tool }: { repoKey: string; tool: ToolSchemaType }) {
+interface ToolItemProps {
+  repoKey: string
+  tool: ToolSchemaType
+  envs: EnvironmentSchemaType[]
+}
+function ToolItem({ repoKey, tool, envs }: ToolItemProps) {
   return (
     <Accordion type="single" collapsible className="bg-muted w-full rounded-md border-b px-4">
       <AccordionItem value={tool.id}>
@@ -147,7 +180,12 @@ function ToolItem({ repoKey, tool }: { repoKey: string; tool: ToolSchemaType }) 
           {tool.description && (
             <p className="text-muted-foreground mb-6 line-clamp-3 text-sm">{tool.description}</p>
           )}
-          <ToolItemContent repoKey={repoKey} toolName={tool.name} inputSchema={tool.inputSchema} />
+          <ToolItemContent
+            repoKey={repoKey}
+            toolName={tool.name}
+            inputSchema={tool.inputSchema}
+            envs={envs}
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -159,6 +197,7 @@ interface ToolItemContentProps {
   repoKey: string
   toolName: string
   inputSchema: unknown
+  envs: EnvironmentSchemaType[]
 }
 
 type SchemaProperty = {
@@ -221,7 +260,7 @@ const validateNestedSchema = (
       }
   }
 }
-function ToolItemContent({ repoKey, toolName, inputSchema }: ToolItemContentProps) {
+function ToolItemContent({ repoKey, toolName, inputSchema, envs }: ToolItemContentProps) {
   const form = useForm<FormValues>({
     defaultValues: {},
   })
@@ -246,6 +285,20 @@ function ToolItemContent({ repoKey, toolName, inputSchema }: ToolItemContentProp
 
   const onSubmit = async (data: FormValues) => {
     const errors: Record<string, string> = {}
+
+    if (envs.length > 0) {
+      const envErrors: Record<string, string> = {}
+      for (const env of envs) {
+        if (!env.value) {
+          envErrors[env.key] = "This field is required"
+        }
+      }
+
+      if (Object.keys(envErrors).length > 0) {
+        toast.error(`Please fill in all required env fields: ${Object.keys(envErrors).join(", ")}`)
+        return
+      }
+    }
 
     if (Array.isArray(inputSchemaObject.required)) {
       for (const requiredKey of inputSchemaObject.required) {
@@ -280,8 +333,11 @@ function ToolItemContent({ repoKey, toolName, inputSchema }: ToolItemContentProp
     }
 
     const result = await toolCall(repoKey, {
-      toolName,
-      arguments: data,
+      toolCallParam: {
+        toolName,
+        arguments: data,
+      },
+      envs,
     })
 
     if (!result) {

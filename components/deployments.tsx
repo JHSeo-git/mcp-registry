@@ -5,9 +5,9 @@ import { ArrowRight, Loader2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import {
+  DeploymentEnvironmentSchemaType,
   DeploymentSchemaType,
   DeploymentsResponseSchema,
-  EnvironmentSchemaType,
 } from "@/lib/schema/deployment"
 import { cn } from "@/lib/utils"
 import { useRegistGithub } from "@/app/hooks/use-regist-github"
@@ -22,7 +22,7 @@ interface DeploymentsProps {
 
 export function Deployments({ repoKey }: DeploymentsProps) {
   const [items, setItems] = useState<DeploymentSchemaType[]>([])
-  const [envs, setEnvs] = useState<EnvironmentSchemaType[]>([])
+  const [envs, setEnvs] = useState<DeploymentEnvironmentSchemaType[]>([])
   const [isLoadingRefresh, setIsLoadingRefresh] = useState(false)
 
   const { isLoading, fetchRegistGithub } = useRegistGithub()

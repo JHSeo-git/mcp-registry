@@ -22,16 +22,15 @@ export const DeploymentSchema = z.object({
 
 export type DeploymentSchemaType = z.infer<typeof DeploymentSchema>
 
-export const EnvironmentSchema = z.object({
+export const DeploymentEnvironmentSchema = z.object({
   key: z.string(),
-  value: z.string(),
 })
 
-export type EnvironmentSchemaType = z.infer<typeof EnvironmentSchema>
+export type DeploymentEnvironmentSchemaType = z.infer<typeof DeploymentEnvironmentSchema>
 
 export const DeploymentsResponseSchema = z.object({
   deployments: z.array(DeploymentSchema),
-  envs: z.array(EnvironmentSchema),
+  envs: z.array(DeploymentEnvironmentSchema),
 })
 
 export type DeploymentsResponseSchemaType = z.infer<typeof DeploymentsResponseSchema>

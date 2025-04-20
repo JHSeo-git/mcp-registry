@@ -67,7 +67,6 @@ export const environments = pgTable(
   {
     id: uuid("id").primaryKey(),
     key: text("key").notNull(),
-    value: text("value").notNull(),
     serverId: uuid("server_id").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     createdBy: text("created_by").notNull(),

@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { EnvironmentSchema } from "./deployment"
+import { DeploymentEnvironmentSchema } from "./deployment"
 import { TransportTypeSchema } from "./server"
 
 export const GithubRegistSchema = z.object({
@@ -9,7 +9,7 @@ export const GithubRegistSchema = z.object({
   owner: z.string().min(1, { message: "Owner is required" }),
   repo: z.string().min(1, { message: "Repository is required" }),
   baseDirectory: z.string().min(1, { message: "Base directory is required" }),
-  envs: z.array(EnvironmentSchema),
+  envs: z.array(DeploymentEnvironmentSchema),
 })
 export type GithubRegistSchemaType = z.infer<typeof GithubRegistSchema>
 
@@ -19,7 +19,7 @@ export const GithubRegistRequestSchema = z.object({
   owner: z.string().min(1, { message: "Owner is required" }),
   repo: z.string().min(1, { message: "Repository is required" }),
   baseDirectory: z.string().min(1, { message: "Base directory is required" }),
-  envs: z.array(EnvironmentSchema),
+  envs: z.array(DeploymentEnvironmentSchema),
 })
 export type GithubRegistRequestSchema = z.infer<typeof GithubRegistRequestSchema>
 

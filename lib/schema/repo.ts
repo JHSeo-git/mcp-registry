@@ -35,6 +35,12 @@ export const RepositoryServerSchema = z.object({
 
 export type RepositoryServerSchemaType = z.infer<typeof RepositoryServerSchema>
 
+export const RepositoryEnvironmentSchema = z.object({
+  key: z.string(),
+})
+
+export type RepositoryEnvironmentSchemaType = z.infer<typeof RepositoryEnvironmentSchema>
+
 export const RepositoryResponseSchema = z.object({
   id: z.string(),
   repoKey: z.string(),
@@ -44,6 +50,7 @@ export const RepositoryResponseSchema = z.object({
   url: z.string(),
   server: RepositoryServerSchema.nullable(),
   tools: z.array(ToolSchema),
+  envs: z.array(RepositoryEnvironmentSchema),
 })
 
 export type RepositoryResponseSchemaType = z.infer<typeof RepositoryResponseSchema>

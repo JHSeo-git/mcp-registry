@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db/drizzle"
-import { environments, repos } from "@/lib/db/schema"
+import { repos } from "@/lib/db/schema"
 import { createEnv, createEnvCliArgs, dockerPull } from "@/lib/docker/utils"
 import { toolCall, ToolCallResult } from "@/lib/mcp/utils"
 import { ToolCallRequestSchema, ToolCallResponseSchemaType } from "@/lib/schema/server"
@@ -48,22 +48,16 @@ export async function POST(
 
     await dockerPull(tag)
 
-    const envs = await db.query.environments.findMany({
-      where: eq(environments.serverId, foundRepository.servers.id),
-    })
-
-    const mappedEnvs = envs.map((env) => ({ key: env.key, value: env.value }))
-
     let toolCallResult: ToolCallResult = []
     if (foundRepository.servers.transportType === "stdio") {
       toolCallResult = await toolCall({
         type: "stdio",
         command: "docker",
-        args: ["run", "-i", "--rm", ...createEnvCliArgs(mappedEnvs), tag],
-        env: createEnv(mappedEnvs),
+        args: ["run", "-i", "--rm", ...createEnvCliArgs(parsed.data.envs), tag],
+        env: createEnv(parsed.data.envs),
         params: {
-          name: parsed.data.toolName,
-          arguments: parsed.data.arguments,
+          name: parsed.data.toolCallParam.toolName,
+          arguments: parsed.data.toolCallParam.arguments,
         },
       })
     } else {

@@ -52,7 +52,7 @@ export function Register() {
     const registeredDeploymentId = await fetchRegistGithub({
       ...data,
       repoKey: `${repoKeyPrefix}/${data.repoKeyPostfix}`,
-      envs: data.envs.filter((env) => env.key !== "" && env.value !== ""),
+      envs: data.envs.filter((env) => env.key !== ""),
     })
 
     setDeploymentId(registeredDeploymentId)
@@ -150,8 +150,8 @@ export function Register() {
             )}
           />
           <div className="mt-4 flex items-center justify-between">
-            <FormLabel className="">Variables</FormLabel>
-            <Button type="button" size="icon" onClick={() => append({ key: "", value: "" })}>
+            <FormLabel className="">Environment variables</FormLabel>
+            <Button type="button" variant="outline" size="icon" onClick={() => append({ key: "" })}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -169,14 +169,6 @@ export function Register() {
                         value={value.key}
                         onChange={(e) => {
                           onChange({ ...value, key: e.target.value })
-                        }}
-                        {...field}
-                      />
-                      <Input
-                        placeholder="value"
-                        value={value.value}
-                        onChange={(e) => {
-                          onChange({ ...value, value: e.target.value })
                         }}
                         {...field}
                       />

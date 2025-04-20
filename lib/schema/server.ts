@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { ToolCallContentSchema } from "../mcp/schema"
+import { EnvironmentSchema } from "./environment"
 
 export const TransportTypeSchema = z.enum(["stdio", "sse"], {
   message: "Transport type is required",
@@ -8,8 +9,11 @@ export const TransportTypeSchema = z.enum(["stdio", "sse"], {
 export type TransportTypeSchemaType = z.infer<typeof TransportTypeSchema>
 
 export const ToolCallRequestSchema = z.object({
-  toolName: z.string(),
-  arguments: z.any(),
+  toolCallParam: z.object({
+    toolName: z.string(),
+    arguments: z.any(),
+  }),
+  envs: z.array(EnvironmentSchema),
 })
 export type ToolCallRequestSchemaType = z.infer<typeof ToolCallRequestSchema>
 

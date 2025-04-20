@@ -18,7 +18,6 @@ CREATE TABLE "deployments" (
 CREATE TABLE "environments" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"key" text NOT NULL,
-	"value" text NOT NULL,
 	"server_id" uuid NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" text NOT NULL,

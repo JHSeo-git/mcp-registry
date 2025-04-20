@@ -7,10 +7,15 @@ import { db } from "@/lib/db/drizzle"
 import { createTools } from "@/lib/db/queries"
 import { deployments, DeploymentStatus, environments, repos, servers } from "@/lib/db/schema"
 import { genenerateUUID } from "@/lib/db/utils"
-import { createEnv, createEnvCliArgs, dockerBuildAndPush, dockerLogin } from "@/lib/docker/utils"
+import {
+  createEnvCliArgs,
+  createEnvOnlyKey,
+  dockerBuildAndPush,
+  dockerLogin,
+} from "@/lib/docker/utils"
 import { getRepository } from "@/lib/github"
 import { toolList, ToolListResult } from "@/lib/mcp/utils"
-import { EnvironmentSchemaType } from "@/lib/schema/deployment"
+import { DeploymentEnvironmentSchemaType } from "@/lib/schema/deployment"
 import { GithubRegistRequestSchema, GithubRegistResponseSchemaType } from "@/lib/schema/regist"
 import {
   checkFileExists,
@@ -76,7 +81,7 @@ interface DeployOptions {
   ownerName: string
   repoName: string
   baseDirectory: string
-  envs: EnvironmentSchemaType[]
+  envs: DeploymentEnvironmentSchemaType[]
 }
 async function deploy({
   transportType,
@@ -186,7 +191,6 @@ async function deploy({
             envs.map((env) => ({
               id: genenerateUUID(),
               key: env.key,
-              value: env.value,
               serverId: server.id,
               createdBy: "SYSTEM",
             }))
@@ -224,7 +228,7 @@ async function deploy({
           type: "stdio",
           command: "docker",
           args: ["run", "-i", "--rm", ...createEnvCliArgs(insertedEnvs), tag],
-          env: createEnv(insertedEnvs),
+          env: createEnvOnlyKey(insertedEnvs),
         })
       } else {
         // TODO: sse는 현재 고려 안함

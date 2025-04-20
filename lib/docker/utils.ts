@@ -2,7 +2,8 @@ import path from "node:path"
 import getPort, { portNumbers } from "get-port"
 
 import { Env } from "../env"
-import { EnvironmentSchemaType } from "../schema/deployment"
+import { DeploymentEnvironmentSchemaType } from "../schema/deployment"
+import { EnvironmentSchemaType } from "../schema/environment"
 import { executeCommand } from "../terminal/utils"
 
 export async function getTagRepo(baseDirectory: string, ownerName: string, repoName: string) {
@@ -54,7 +55,7 @@ export async function dockerRun(tag: string) {
   return port
 }
 
-export function createEnvCliArgs(envs: EnvironmentSchemaType[]) {
+export function createEnvCliArgs(envs: DeploymentEnvironmentSchemaType[]) {
   if (envs.length === 0) {
     return [""]
   }
@@ -66,6 +67,16 @@ export function createEnv(envs: EnvironmentSchemaType[]) {
   return envs.reduce(
     (acc, env) => {
       acc[env.key] = env.value
+      return acc
+    },
+    {} as Record<string, string>
+  )
+}
+
+export function createEnvOnlyKey(envs: DeploymentEnvironmentSchemaType[]) {
+  return envs.reduce(
+    (acc, env) => {
+      acc[env.key] = env.key
       return acc
     },
     {} as Record<string, string>
