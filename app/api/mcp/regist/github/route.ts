@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { transportType, repoKey, owner, repo, baseDirectory, envs } = parsed.data
+    const { transportType, repoKey, owner, repo, baseDirectory, envs, commandType, command } =
+      parsed.data
 
     const githubRepository = await getRepository(owner, repo)
 
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       repoName: repo,
       baseDirectory,
       envs,
+      commandType,
+      command: command ?? undefined,
     })
 
     const response: GithubRegistResponseSchemaType = {
@@ -82,6 +85,8 @@ interface DeployOptions {
   repoName: string
   baseDirectory: string
   envs: DeploymentEnvironmentSchemaType[]
+  commandType: string
+  command?: string
 }
 async function deploy({
   transportType,
@@ -90,6 +95,8 @@ async function deploy({
   repoName,
   baseDirectory,
   envs,
+  commandType,
+  command,
 }: DeployOptions) {
   const githubRepository = await getRepository(ownerName, repoName)
 
@@ -135,6 +142,8 @@ async function deploy({
         // description: "",
         repoId: repository.id,
         transportType,
+        commandType,
+        command,
         createdBy: "SYSTEM",
       })
       .returning()

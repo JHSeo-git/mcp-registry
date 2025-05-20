@@ -35,6 +35,8 @@ export const servers = pgTable(
     repoId: uuid("repo_id").notNull(),
     tag: text("tag"),
     transportType: text("transport_type").notNull(),
+    commandType: text("command_type").notNull(),
+    command: text("command"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     createdBy: text("created_by").notNull(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

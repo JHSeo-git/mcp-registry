@@ -17,6 +17,8 @@ export const DeploymentSchema = z.object({
   project: z.string(),
   name: z.string(),
   baseDirectory: z.string(),
+  commandType: z.string(),
+  command: z.string().optional(),
   transportType: TransportTypeSchema,
 })
 

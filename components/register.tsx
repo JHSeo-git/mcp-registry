@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash } from "lucide-react"
-import { Controller, useFieldArray, useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 
 import { GithubRegistSchema, GithubRegistSchemaType } from "@/lib/schema/regist"
 import { cn } from "@/lib/utils"
@@ -12,7 +12,7 @@ import { useRegistGithub } from "@/app/hooks/use-regist-github"
 import { Icons } from "./icons"
 import { Logs } from "./logs"
 import { Button } from "./ui/button"
-import { Form, FormControl, FormItem, FormLabel, FormMessage } from "./ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form"
 import { Input } from "./ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
@@ -31,6 +31,8 @@ export function Register() {
       repo: "",
       baseDirectory: ".",
       envs: [],
+      commandType: "docker",
+      command: "",
     },
   })
 
@@ -38,6 +40,8 @@ export function Register() {
     control: form.control,
     name: "envs",
   })
+
+  const commandType = form.watch("commandType")
 
   const onSubmit = async (data: GithubRegistSchemaType) => {
     if (deploymentId) {
@@ -49,8 +53,12 @@ export function Register() {
       setDeploymentId(undefined)
     }
 
+    const { commandType, command, ...restData } = data
+
     const registeredDeploymentId = await fetchRegistGithub({
-      ...data,
+      ...restData,
+      commandType,
+      command: commandType === "docker" ? undefined : command,
       repoKey: `${repoKeyPrefix}/${data.repoKeyPostfix}`,
       envs: data.envs.filter((env) => env.key !== ""),
     })
@@ -62,7 +70,7 @@ export function Register() {
     <div className="mx-auto w-full max-w-xl">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Controller
+          <FormField
             control={form.control}
             name="owner"
             render={({ field: { onChange, ...field } }) => (
@@ -82,7 +90,7 @@ export function Register() {
               </FormItem>
             )}
           />
-          <Controller
+          <FormField
             control={form.control}
             name="repo"
             render={({ field }) => (
@@ -95,7 +103,7 @@ export function Register() {
               </FormItem>
             )}
           />
-          <Controller
+          <FormField
             control={form.control}
             name="repoKeyPostfix"
             render={({ field }) => (
@@ -113,7 +121,7 @@ export function Register() {
               </FormItem>
             )}
           />
-          <Controller
+          <FormField
             control={form.control}
             name="baseDirectory"
             render={({ field }) => (
@@ -126,7 +134,55 @@ export function Register() {
               </FormItem>
             )}
           />
-          <Controller
+          <FormField
+            control={form.control}
+            name="commandType"
+            render={({ field }) => (
+              <FormItem className="mt-4">
+                <FormLabel>Command Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="명령어 타입을 선택하세요" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="docker">docker</SelectItem>
+                    <SelectItem value="npx">npx</SelectItem>
+                    <SelectItem value="uvx">uvx</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {commandType !== "docker" && (
+            <FormField
+              control={form.control}
+              name="command"
+              render={({ field }) => (
+                <FormItem className="mt-4">
+                  <FormLabel>Command</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={(() => {
+                        if (commandType === "npx") {
+                          return "npx -y your-mcp-server@1.0"
+                        }
+                        if (commandType === "uvx") {
+                          return "uvx your-mcp-server"
+                        }
+                        return ""
+                      })()}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          <FormField
             control={form.control}
             name="transportType"
             render={({ field }) => (
@@ -156,7 +212,7 @@ export function Register() {
             </Button>
           </div>
           {fields.map((field, index) => (
-            <Controller
+            <FormField
               key={field.id}
               control={form.control}
               name={`envs.${index}`}

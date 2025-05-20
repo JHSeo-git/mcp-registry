@@ -53,6 +53,8 @@ export async function GET(
         name: repos.name,
         baseDirectory: repos.baseDirectory,
         transportType: servers.transportType as TransportTypeSchemaType,
+        commandType: servers.commandType,
+        command: servers.command ?? undefined,
       })),
       envs: foundEnvs.map(({ key }) => ({
         key,

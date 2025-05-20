@@ -74,6 +74,8 @@ export function Deployments({ repoKey }: DeploymentsProps) {
 
     await fetchRegistGithub({
       transportType: context.transportType,
+      commandType: context.commandType,
+      command: context.command,
       baseDirectory: context.baseDirectory,
       owner: context.project,
       repo: context.name,
